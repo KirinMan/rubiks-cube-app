@@ -120,6 +120,17 @@ export function GamePage({ onBack }: Props) {
   // Puzzle key e.g. "3x3"
   const puzzleKey = parsePuzzleKey(cubeStore.cubeSize);
 
+  // 初回マウント時にスクランブルをキューブに適用
+  const scrambleAppliedRef = useRef(false);
+  useEffect(() => {
+    if (!scrambleAppliedRef.current && scramble) {
+      scrambleAppliedRef.current = true;
+      const moves = scramble.trim().split(/\s+/).filter(Boolean).map((n) => parseMove(n));
+      cubeStore.scramble(moves);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Load solve history on mount
   useEffect(() => {
     historyStore.loadSolves(puzzleKey);
@@ -181,6 +192,9 @@ export function GamePage({ onBack }: Props) {
     resultShownRef.current = false;
     const newScramble = generateScrambleNotation(cubeStore.cubeSize);
     setScramble(newScramble);
+    // スクランブルをキューブに適用
+    const moves = newScramble.trim().split(/\s+/).filter(Boolean).map((n) => parseMove(n));
+    cubeStore.scramble(moves);
   }, [timerStore, cubeStore]);
 
   const handleNewScramble = useCallback(() => {

@@ -1,13 +1,14 @@
 import type { CubeColor, CubeConfig, CubeSize, FaceId, PuzzleType } from '../types';
 
 // デフォルト面カラー（標準色: 白上・黄下・緑前・青後・橙左・赤右）
+// WCA標準色配置: 上=白、下=黄、前=赤、後=橙、左=青、右=緑
 const DEFAULT_COLORS: Record<FaceId, CubeColor> = {
   U: 'white',
   D: 'yellow',
-  F: 'green',
-  B: 'blue',
-  L: 'orange',
-  R: 'red',
+  F: 'red',
+  B: 'orange',
+  L: 'blue',
+  R: 'green',
 };
 
 // 各サイズのキューブ設定
