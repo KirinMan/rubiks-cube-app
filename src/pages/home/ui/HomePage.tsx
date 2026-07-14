@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { useCubeStore } from '../../../entities/cube/model';
 import { useRank } from '../../../features/rank/model';
-import { IsoCubeView } from '../../../widgets/cube-viewer/ui';
+import { InteractiveCubeView } from '../../../widgets/cube-viewer/ui';
 import { RankBadge } from '../../../widgets/stats-panel/ui/RankBadge';
 import { theme } from '../../../shared/config/theme';
 import { CUBE_CONFIGS } from '../../../shared/config/constants';
@@ -138,7 +138,7 @@ export function HomePage({ onStartSolve, onHistory }: HomePageProps) {
         {/* ── IsoCubeView with rotation animation ── */}
         <View style={styles.cubeSection}>
           <Animated.View style={[styles.cubeWrapper, { transform: [{ scale: scaleAnim }] }]}>
-            <IsoCubeView state={cubeState} size={selectedSize} viewSize={240} />
+            <InteractiveCubeView state={cubeState} size={selectedSize} viewSize={240} />
           </Animated.View>
         </View>
 
