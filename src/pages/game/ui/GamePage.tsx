@@ -8,11 +8,10 @@ import {
   TextStyle,
   useWindowDimensions,
 } from 'react-native';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { useCubeStore } from '../../../entities/cube/model';
 import { useTimerStore } from '../../../features/timer-control/model/timerStore';
 import { useSolveHistoryStore } from '../../../features/timer-control/model/solveHistoryStore';
-import { IsoCubeView } from '../../../widgets/cube-viewer/ui';
+import { InteractiveCubeView } from '../../../widgets/cube-viewer/ui';
 import { TimerDisplay } from '../../../widgets/timer/ui';
 import { ScrambleDisplay } from '../../../widgets/scramble-display/ui';
 import { theme } from '../../../shared/config/theme';
@@ -241,36 +240,17 @@ export function GamePage({ onBack }: Props) {
   }, [timerStore, cubeStore, onBack]);
 
   // ---------------------------------------------------------------------------
-  // Swipe gesture for cube manipulation
+  // Swipe callback from InteractiveCubeView (1本指)
   // ---------------------------------------------------------------------------
 
-  // Track which face the swipe started on
-  const swipeFaceRef = useRef<'U' | 'F' | 'R'>('F');
-  const swipeHandledRef = useRef(false);
-
-  const cubeGesture = Gesture.Pan()
-    .runOnJS(true)
-    .onBegin((e) => {
-      swipeHandledRef.current = false;
-      // Determine face from touch position relative to the cube view center
-      // This is a coarse heuristic based on the isometric layout:
-      //   - Upper 35% of cube area -> U face
-      //   - Lower-left quadrant -> F face
-      //   - Lower-right quadrant -> R face
-      // The cube view is roughly square (cubeViewSize x cubeViewSize).
-      // We store the starting face as a ref and use it when the gesture ends.
-      swipeFaceRef.current = 'F'; // default; will be refined by position
-    })
-    .onEnd((e) => {
-      if (swipeHandledRef.current) return;
+  const handleSingleFingerSwipe = useCallback(
+    (dx: number, dy: number) => {
       if (timerStore.state !== 'running') return;
-
-      const move = swipeToMove(e.translationX, e.translationY, swipeFaceRef.current);
-      if (move) {
-        swipeHandledRef.current = true;
-        cubeStore.applyMove(move);
-      }
-    });
+      const move = swipeToMove(dx, dy, 'F');
+      if (move) cubeStore.applyMove(move);
+    },
+    [timerStore.state, cubeStore],
+  );
 
   // ---------------------------------------------------------------------------
   // Derived state
@@ -345,15 +325,12 @@ export function GamePage({ onBack }: Props) {
 
         {/* ── Cube view ──────────────────────────────────── */}
         <View style={styles.cubeWrapper}>
-          <GestureDetector gesture={cubeGesture}>
-            <View style={styles.cubeGestureArea}>
-              <IsoCubeView
-                state={cubeStore.cubeState}
-                size={cubeStore.cubeSize}
-                viewSize={cubeViewSize}
-              />
-            </View>
-          </GestureDetector>
+          <InteractiveCubeView
+            state={cubeStore.cubeState}
+            size={cubeStore.cubeSize}
+            viewSize={cubeViewSize}
+            onSingleFingerSwipeEnd={handleSingleFingerSwipe}
+          />
         </View>
 
         {/* ── Timer section ──────────────────────────────── */}
@@ -483,11 +460,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: theme.spacing.md,
-  } as ViewStyle,
-
-  cubeGestureArea: {
-    alignItems: 'center',
-    justifyContent: 'center',
   } as ViewStyle,
 
   // Timer
