@@ -20,9 +20,9 @@ export async function getSolves(puzzleKey: string): Promise<SolveRecord[]> {
   }
 }
 
-export async function saveSolve(record: SolveRecord): Promise<void> {
-  const key = solvesKeyForPuzzle(record.puzzleType);
-  const existing = await getSolves(record.puzzleType);
+export async function saveSolve(record: SolveRecord, puzzleKey: string): Promise<void> {
+  const key = solvesKeyForPuzzle(puzzleKey);
+  const existing = await getSolves(puzzleKey);
   const updated = [record, ...existing];
   await AsyncStorage.setItem(key, JSON.stringify(updated));
 }

@@ -55,13 +55,11 @@ export const useSolveHistoryStore = create<SolveHistoryStore>((set, get) => ({
   },
 
   addSolve: async (record: SolveRecord) => {
-    // AsyncStorage に保存（storage層が puzzleType をキーとして使用）
-    await saveSolve(record);
+    // puzzleKey は "3x3" 形式（record.puzzleType は 'NxN' 固定でサイズを区別できないため使用しない）
+    const puzzleKey = `${record.cubeSize}x${record.cubeSize}`;
 
-    // puzzleKey は "NxN" 形式ではなく "3x3" 形式を想定
-    // storage.ts は record.puzzleType をキーにしているため、
-    // ここでは puzzleType の文字列をそのままキーとして扱う
-    const puzzleKey = record.puzzleType;
+    // AsyncStorage に保存
+    await saveSolve(record, puzzleKey);
 
     set((state) => {
       const existing = state.solves[puzzleKey] ?? [];
