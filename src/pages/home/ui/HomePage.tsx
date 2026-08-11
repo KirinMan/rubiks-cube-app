@@ -59,9 +59,10 @@ function PuzzleTab({ label, selected, onPress }: PuzzleTabProps) {
 interface HomePageProps {
   onStartSolve?: () => void;
   onHistory?: () => void;
+  onFreeMode?: () => void;
 }
 
-export function HomePage({ onStartSolve, onHistory }: HomePageProps) {
+export function HomePage({ onStartSolve, onHistory, onFreeMode }: HomePageProps) {
   // ---- Cube store ----
   const { cubeState, cubeSize, setCubeSize } = useCubeStore();
   const [selectedSize, setSelectedSize] = useState<CubeSize>(cubeSize);
@@ -181,6 +182,14 @@ export function HomePage({ onStartSolve, onHistory }: HomePageProps) {
             activeOpacity={0.8}
           >
             <Text style={styles.secondaryButtonText}>📊  History</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.secondaryButton}
+            onPress={onFreeMode}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.secondaryButtonText}>🧩  フリーモード</Text>
           </TouchableOpacity>
         </View>
       </View>

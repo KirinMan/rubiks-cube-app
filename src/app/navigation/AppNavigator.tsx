@@ -14,6 +14,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 export type RootStackParamList = {
   Tabs: undefined;
   Game: undefined;
+  Free: undefined;
 };
 
 export type TabParamList = {
@@ -32,6 +33,7 @@ function HomeScreen() {
     <HomePage
       onStartSolve={() => navigation.navigate('Game')}
       onHistory={() => navigation.navigate('Tabs', { screen: 'History' } as never)}
+      onFreeMode={() => navigation.navigate('Free')}
     />
   );
 }
@@ -91,6 +93,14 @@ export function AppNavigator() {
         >
           {(props: NativeStackScreenProps<RootStackParamList, 'Game'>) => (
             <GamePage onBack={() => props.navigation.goBack()} />
+          )}
+        </Stack.Screen>
+        <Stack.Screen
+          name="Free"
+          options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
+        >
+          {(props: NativeStackScreenProps<RootStackParamList, 'Free'>) => (
+            <GamePage mode="free" onBack={() => props.navigation.goBack()} />
           )}
         </Stack.Screen>
       </Stack.Navigator>

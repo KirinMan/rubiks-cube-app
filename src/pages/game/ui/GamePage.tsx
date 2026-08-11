@@ -8,11 +8,10 @@ import {
   TextStyle,
   useWindowDimensions,
 } from 'react-native';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { useCubeStore } from '../../../entities/cube/model';
 import { useTimerStore } from '../../../features/timer-control/model/timerStore';
 import { useSolveHistoryStore } from '../../../features/timer-control/model/solveHistoryStore';
-import { IsoCubeView } from '../../../widgets/cube-viewer/ui';
+import { Cube3DView } from '../../../widgets/cube-viewer-3d/ui';
 import { TimerDisplay } from '../../../widgets/timer/ui';
 import { ScrambleDisplay } from '../../../widgets/scramble-display/ui';
 import { theme } from '../../../shared/config/theme';
@@ -32,76 +31,17 @@ import { SolveResultModal } from './SolveResultModal';
 
 interface Props {
   onBack?: () => void;
-}
-
-// ---------------------------------------------------------------------------
-// Swipe -> Move mapping
-// ---------------------------------------------------------------------------
-
-/**
- * Convert a swipe gesture (dx, dy) over a visible isometric face
- * to a cube Move. The mapping is intentionally simple:
- *
- *   Face U (top):
- *     swipe right -> U CW (y-axis rotation)
- *     swipe left  -> U CCW
- *     swipe up    -> B CW
- *     swipe down  -> F CW
- *
- *   Face F (front-left of iso view):
- *     swipe up    -> L CCW
- *     swipe down  -> L CW
- *     swipe right -> D CW
- *     swipe left  -> U CW
- *
- *   Face R (right side of iso view):
- *     swipe up    -> R CW
- *     swipe down  -> R CCW
- *     swipe left  -> D CCW
- *     swipe right -> U CCW
- */
-function swipeToMove(dx: number, dy: number, face: 'U' | 'F' | 'R'): Move | null {
-  const absDx = Math.abs(dx);
-  const absDy = Math.abs(dy);
-  const THRESHOLD = 20;
-
-  if (absDx < THRESHOLD && absDy < THRESHOLD) return null;
-
-  const isHorizontal = absDx >= absDy;
-
-  switch (face) {
-    case 'U':
-      if (isHorizontal) {
-        return { face: 'U', direction: dx > 0 ? 1 : -1, wide: false, double: false };
-      } else {
-        return { face: dy > 0 ? 'F' : 'B', direction: 1, wide: false, double: false };
-      }
-
-    case 'F':
-      if (isHorizontal) {
-        return { face: dx > 0 ? 'D' : 'U', direction: 1, wide: false, double: false };
-      } else {
-        return { face: 'L', direction: dy > 0 ? 1 : -1, wide: false, double: false };
-      }
-
-    case 'R':
-      if (isHorizontal) {
-        return { face: dx > 0 ? 'U' : 'D', direction: dx > 0 ? -1 : 1, wide: false, double: false };
-      } else {
-        return { face: 'R', direction: dy < 0 ? 1 : -1, wide: false, double: false };
-      }
-
-    default:
-      return null;
-  }
+  /** 'timed' = 通常のタイムアタック。'free' = タイマー・履歴保存なしの練習モード。 */
+  mode?: 'timed' | 'free';
 }
 
 // ---------------------------------------------------------------------------
 // GamePage
 // ---------------------------------------------------------------------------
 
-export function GamePage({ onBack }: Props) {
+export function GamePage({ onBack, mode = 'timed' }: Props) {
   const { width } = useWindowDimensions();
+  const isFree = mode === 'free';
 
   // Stores
   const cubeStore = useCubeStore();
@@ -133,20 +73,23 @@ export function GamePage({ onBack }: Props) {
 
   // Load solve history on mount
   useEffect(() => {
+    if (isFree) return;
     historyStore.loadSolves(puzzleKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [puzzleKey]);
+  }, [puzzleKey, isFree]);
 
   // Solve detection: when timer is running and cube becomes solved
   useEffect(() => {
+    if (isFree) return;
     if (timerStore.state !== 'running') return;
     if (isSolved(cubeStore.cubeState) && !resultShownRef.current) {
       timerStore.stopTimer();
     }
-  }, [cubeStore.cubeState, timerStore]);
+  }, [cubeStore.cubeState, timerStore, isFree]);
 
   // Show result modal when timer stops
   useEffect(() => {
+    if (isFree) return;
     if (timerStore.state !== 'stopped') return;
     if (resultShownRef.current) return;
 
@@ -210,10 +153,17 @@ export function GamePage({ onBack }: Props) {
   }, [timerStore, cubeStore]);
 
   const handleUndo = useCallback(() => {
-    if (timerStore.state === 'stopped') {
+    if (isFree || timerStore.state === 'stopped') {
       cubeStore.undo();
     }
-  }, [timerStore.state, cubeStore]);
+  }, [isFree, timerStore.state, cubeStore]);
+
+  const handleCubeMove = useCallback(
+    (move: Move) => {
+      cubeStore.applyMove(move);
+    },
+    [cubeStore],
+  );
 
   const handleDNF = useCallback(() => {
     timerStore.markDNF();
@@ -239,38 +189,6 @@ export function GamePage({ onBack }: Props) {
     cubeStore.reset();
     onBack?.();
   }, [timerStore, cubeStore, onBack]);
-
-  // ---------------------------------------------------------------------------
-  // Swipe gesture for cube manipulation
-  // ---------------------------------------------------------------------------
-
-  // Track which face the swipe started on
-  const swipeFaceRef = useRef<'U' | 'F' | 'R'>('F');
-  const swipeHandledRef = useRef(false);
-
-  const cubeGesture = Gesture.Pan()
-    .runOnJS(true)
-    .onBegin((e) => {
-      swipeHandledRef.current = false;
-      // Determine face from touch position relative to the cube view center
-      // This is a coarse heuristic based on the isometric layout:
-      //   - Upper 35% of cube area -> U face
-      //   - Lower-left quadrant -> F face
-      //   - Lower-right quadrant -> R face
-      // The cube view is roughly square (cubeViewSize x cubeViewSize).
-      // We store the starting face as a ref and use it when the gesture ends.
-      swipeFaceRef.current = 'F'; // default; will be refined by position
-    })
-    .onEnd((e) => {
-      if (swipeHandledRef.current) return;
-      if (timerStore.state !== 'running') return;
-
-      const move = swipeToMove(e.translationX, e.translationY, swipeFaceRef.current);
-      if (move) {
-        swipeHandledRef.current = true;
-        cubeStore.applyMove(move);
-      }
-    });
 
   // ---------------------------------------------------------------------------
   // Derived state
@@ -301,7 +219,9 @@ export function GamePage({ onBack }: Props) {
   else if (isInspection) infoText = 'タップでタイマー開始';
   else if (isRunning) infoText = 'タップで停止';
 
-  const puzzleLabel = `${cubeStore.cubeSize}×${cubeStore.cubeSize}`;
+  const puzzleLabel = isFree
+    ? `${cubeStore.cubeSize}×${cubeStore.cubeSize} フリーモード`
+    : `${cubeStore.cubeSize}×${cubeStore.cubeSize}`;
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -345,52 +265,35 @@ export function GamePage({ onBack }: Props) {
 
         {/* ── Cube view ──────────────────────────────────── */}
         <View style={styles.cubeWrapper}>
-          <GestureDetector gesture={cubeGesture}>
-            <View style={styles.cubeGestureArea}>
-              <IsoCubeView
-                state={cubeStore.cubeState}
-                size={cubeStore.cubeSize}
-                viewSize={cubeViewSize}
-              />
-            </View>
-          </GestureDetector>
-        </View>
-
-        {/* ── Timer section ──────────────────────────────── */}
-        <View style={styles.timerSection}>
-          <TimerDisplay
-            timeMs={displayElapsedMs}
-            state={timerState}
-            inspectionSecondsLeft={inspectionSecondsLeft}
-            onPress={handleTimerPress}
-            puzzleKey={puzzleKey}
+          <Cube3DView
+            cubeState={cubeStore.cubeState}
+            size={cubeStore.cubeSize}
+            viewSize={cubeViewSize}
+            interactive={isFree || isRunning}
+            onMove={handleCubeMove}
           />
         </View>
 
+        {/* ── Timer section ──────────────────────────────── */}
+        {!isFree && (
+          <View style={styles.timerSection}>
+            <TimerDisplay
+              timeMs={displayElapsedMs}
+              state={timerState}
+              inspectionSecondsLeft={inspectionSecondsLeft}
+              onPress={handleTimerPress}
+              puzzleKey={puzzleKey}
+            />
+          </View>
+        )}
+
         {/* ── Info / Controls ────────────────────────────── */}
         <View style={styles.bottomSection}>
-          {infoText !== null && !isStopped && (
-            <AppText variant="caption" style={styles.infoText}>
-              {infoText}
-            </AppText>
-          )}
-
-          {isStopped && (
+          {isFree ? (
             <View style={styles.controlsRow}>
-              <Button
-                label="DNF"
-                onPress={handleDNF}
-                variant={currentSolve?.dnf ? 'danger' : 'secondary'}
-                size="sm"
-                style={styles.controlButton}
-              />
-              <Button
-                label="+2"
-                onPress={handlePlusTwo}
-                variant={currentSolve?.plusTwo ? 'secondary' : 'ghost'}
-                size="sm"
-                style={styles.controlButton}
-              />
+              <AppText variant="caption" style={styles.infoText}>
+                {cubeStore.moveHistory.length}手
+              </AppText>
               <Button
                 label="Undo"
                 onPress={handleUndo}
@@ -399,21 +302,57 @@ export function GamePage({ onBack }: Props) {
                 style={styles.controlButton}
               />
             </View>
+          ) : (
+            <>
+              {infoText !== null && !isStopped && (
+                <AppText variant="caption" style={styles.infoText}>
+                  {infoText}
+                </AppText>
+              )}
+
+              {isStopped && (
+                <View style={styles.controlsRow}>
+                  <Button
+                    label="DNF"
+                    onPress={handleDNF}
+                    variant={currentSolve?.dnf ? 'danger' : 'secondary'}
+                    size="sm"
+                    style={styles.controlButton}
+                  />
+                  <Button
+                    label="+2"
+                    onPress={handlePlusTwo}
+                    variant={currentSolve?.plusTwo ? 'secondary' : 'ghost'}
+                    size="sm"
+                    style={styles.controlButton}
+                  />
+                  <Button
+                    label="Undo"
+                    onPress={handleUndo}
+                    variant="ghost"
+                    size="sm"
+                    style={styles.controlButton}
+                  />
+                </View>
+              )}
+            </>
           )}
         </View>
       </View>
 
       {/* ── Result Modal ───────────────────────────────── */}
-      <SolveResultModal
-        visible={resultVisible}
-        timeMs={displayElapsedMs}
-        isDNF={currentSolve?.dnf ?? false}
-        isPlusTwo={currentSolve?.plusTwo ?? false}
-        stats={stats}
-        puzzleKey={puzzleKey}
-        onNextSolve={handleNextSolve}
-        onGoHome={handleGoHome}
-      />
+      {!isFree && (
+        <SolveResultModal
+          visible={resultVisible}
+          timeMs={displayElapsedMs}
+          isDNF={currentSolve?.dnf ?? false}
+          isPlusTwo={currentSolve?.plusTwo ?? false}
+          stats={stats}
+          puzzleKey={puzzleKey}
+          onNextSolve={handleNextSolve}
+          onGoHome={handleGoHome}
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -483,11 +422,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: theme.spacing.md,
-  } as ViewStyle,
-
-  cubeGestureArea: {
-    alignItems: 'center',
-    justifyContent: 'center',
   } as ViewStyle,
 
   // Timer
