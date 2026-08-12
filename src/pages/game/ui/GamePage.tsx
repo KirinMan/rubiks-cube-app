@@ -8,10 +8,11 @@ import {
   TextStyle,
   useWindowDimensions,
 } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { useCubeStore } from '../../../entities/cube/model';
 import { useTimerStore } from '../../../features/timer-control/model/timerStore';
 import { useSolveHistoryStore } from '../../../features/timer-control/model/solveHistoryStore';
-import { Cube3DView } from '../../../widgets/cube-viewer-3d/ui';
+import { IsoCubeView } from '../../../widgets/cube-viewer/ui';
 import { TimerDisplay } from '../../../widgets/timer/ui';
 import { ScrambleDisplay } from '../../../widgets/scramble-display/ui';
 import { theme } from '../../../shared/config/theme';
@@ -33,6 +34,68 @@ interface Props {
   onBack?: () => void;
   /** 'timed' = 通常のタイムアタック。'free' = タイマー・履歴保存なしの練習モード。 */
   mode?: 'timed' | 'free';
+}
+
+// ---------------------------------------------------------------------------
+// Swipe -> Move mapping
+// ---------------------------------------------------------------------------
+
+/**
+ * Convert a swipe gesture (dx, dy) over a visible isometric face
+ * to a cube Move. The mapping is intentionally simple:
+ *
+ *   Face U (top):
+ *     swipe right -> U CW (y-axis rotation)
+ *     swipe left  -> U CCW
+ *     swipe up    -> B CW
+ *     swipe down  -> F CW
+ *
+ *   Face F (front-left of iso view):
+ *     swipe up    -> L CCW
+ *     swipe down  -> L CW
+ *     swipe right -> D CW
+ *     swipe left  -> U CW
+ *
+ *   Face R (right side of iso view):
+ *     swipe up    -> R CW
+ *     swipe down  -> R CCW
+ *     swipe left  -> D CCW
+ *     swipe right -> U CCW
+ */
+function swipeToMove(dx: number, dy: number, face: 'U' | 'F' | 'R'): Move | null {
+  const absDx = Math.abs(dx);
+  const absDy = Math.abs(dy);
+  const THRESHOLD = 20;
+
+  if (absDx < THRESHOLD && absDy < THRESHOLD) return null;
+
+  const isHorizontal = absDx >= absDy;
+
+  switch (face) {
+    case 'U':
+      if (isHorizontal) {
+        return { face: 'U', direction: dx > 0 ? 1 : -1, wide: false, double: false };
+      } else {
+        return { face: dy > 0 ? 'F' : 'B', direction: 1, wide: false, double: false };
+      }
+
+    case 'F':
+      if (isHorizontal) {
+        return { face: dx > 0 ? 'D' : 'U', direction: 1, wide: false, double: false };
+      } else {
+        return { face: 'L', direction: dy > 0 ? 1 : -1, wide: false, double: false };
+      }
+
+    case 'R':
+      if (isHorizontal) {
+        return { face: dx > 0 ? 'U' : 'D', direction: dx > 0 ? -1 : 1, wide: false, double: false };
+      } else {
+        return { face: 'R', direction: dy < 0 ? 1 : -1, wide: false, double: false };
+      }
+
+    default:
+      return null;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -59,6 +122,9 @@ export function GamePage({ onBack, mode = 'timed' }: Props) {
 
   // Puzzle key e.g. "3x3"
   const puzzleKey = parsePuzzleKey(cubeStore.cubeSize);
+
+  // Cube view size
+  const cubeViewSize = Math.min(width * 0.75, 300);
 
   // 初回マウント時にスクランブルをキューブに適用
   const scrambleAppliedRef = useRef(false);
@@ -158,13 +224,6 @@ export function GamePage({ onBack, mode = 'timed' }: Props) {
     }
   }, [isFree, timerStore.state, cubeStore]);
 
-  const handleCubeMove = useCallback(
-    (move: Move) => {
-      cubeStore.applyMove(move);
-    },
-    [cubeStore],
-  );
-
   const handleDNF = useCallback(() => {
     timerStore.markDNF();
   }, [timerStore]);
@@ -191,6 +250,49 @@ export function GamePage({ onBack, mode = 'timed' }: Props) {
   }, [timerStore, cubeStore, onBack]);
 
   // ---------------------------------------------------------------------------
+  // Swipe gesture for cube manipulation
+  // ---------------------------------------------------------------------------
+
+  // フリーモードでは常時操作可能、タイムアタックでは計測中(running)のみ操作可能
+  const swipeFaceRef = useRef<'U' | 'F' | 'R'>('F');
+  const swipeHandledRef = useRef(false);
+
+  // タッチ位置(ジェスチャーエリア内の相対座標)から、等角投影上のどの面(U/F/R)を
+  // タッチしたかを判定する。IsoCubeView(marginFactor=2.6固定)の座標計算式から
+  // 数学的に導出した、U面(上面)の菱形の中心・半径(viewSize比、キューブサイズnに非依存):
+  //   中心 = (0.5, 0.40385) * viewSize
+  //   半幅 = 0.33308 * viewSize、半高 = 0.19231 * viewSize
+  // 菱形の内側ならU面、外側なら中心線より左がF面・右がR面。
+  const detectFaceFromTouch = useCallback(
+    (x: number, y: number): 'U' | 'F' | 'R' => {
+      const nx = x / cubeViewSize;
+      const ny = y / cubeViewSize;
+      const dx = Math.abs(nx - 0.5) / 0.33308;
+      const dy = Math.abs(ny - 0.40385) / 0.19231;
+      if (dx + dy <= 1) return 'U';
+      return nx < 0.5 ? 'F' : 'R';
+    },
+    [cubeViewSize],
+  );
+
+  const cubeGesture = Gesture.Pan()
+    .runOnJS(true)
+    .onBegin((e) => {
+      swipeHandledRef.current = false;
+      swipeFaceRef.current = detectFaceFromTouch(e.x, e.y);
+    })
+    .onEnd((e) => {
+      if (swipeHandledRef.current) return;
+      if (!isFree && timerStore.state !== 'running') return;
+
+      const move = swipeToMove(e.translationX, e.translationY, swipeFaceRef.current);
+      if (move) {
+        swipeHandledRef.current = true;
+        cubeStore.applyMove(move);
+      }
+    });
+
+  // ---------------------------------------------------------------------------
   // Derived state
   // ---------------------------------------------------------------------------
 
@@ -209,9 +311,6 @@ export function GamePage({ onBack, mode = 'timed' }: Props) {
   // Stats for result modal
   const solves = historyStore.solves[puzzleKey] ?? [];
   const stats = calculateStats(solves);
-
-  // Cube view size
-  const cubeViewSize = Math.min(width * 0.75, 300);
 
   // Info text
   let infoText: string | null = null;
@@ -265,13 +364,15 @@ export function GamePage({ onBack, mode = 'timed' }: Props) {
 
         {/* ── Cube view ──────────────────────────────────── */}
         <View style={styles.cubeWrapper}>
-          <Cube3DView
-            cubeState={cubeStore.cubeState}
-            size={cubeStore.cubeSize}
-            viewSize={cubeViewSize}
-            interactive={isFree || isRunning}
-            onMove={handleCubeMove}
-          />
+          <GestureDetector gesture={cubeGesture}>
+            <View style={styles.cubeGestureArea}>
+              <IsoCubeView
+                state={cubeStore.cubeState}
+                size={cubeStore.cubeSize}
+                viewSize={cubeViewSize}
+              />
+            </View>
+          </GestureDetector>
         </View>
 
         {/* ── Timer section ──────────────────────────────── */}
@@ -422,6 +523,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: theme.spacing.md,
+  } as ViewStyle,
+
+  cubeGestureArea: {
+    alignItems: 'center',
+    justifyContent: 'center',
   } as ViewStyle,
 
   // Timer
