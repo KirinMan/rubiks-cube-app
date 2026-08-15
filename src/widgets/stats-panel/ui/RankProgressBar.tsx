@@ -70,7 +70,7 @@ export function RankProgressBar({ currentTier, nextTier, currentBestMs }: Props)
             {nextTier.grade}
           </Text>
         ) : (
-          <Text style={styles.maxLabel}>MAX</Text>
+          <Text style={styles.maxLabel}>MAX(最高ランク)</Text>
         )}
       </View>
 
@@ -94,7 +94,7 @@ export function RankProgressBar({ currentTier, nextTier, currentBestMs }: Props)
         <Text style={styles.progressText}>{progressPercent}</Text>
         {nextTier && nextTier.maxTime !== null && (
           <Text style={styles.thresholdText}>
-            Next: {formatTime(nextTier.maxTime)}
+            次のランクまで: {formatTime(nextTier.maxTime)}
           </Text>
         )}
       </View>
@@ -137,9 +137,9 @@ const styles = StyleSheet.create({
   track: {
     height: 6,
     borderRadius: theme.radius.full,
-    backgroundColor: theme.colors.bg.elevated,
+    backgroundColor: theme.colors.bg.primary,
     borderWidth: 1,
-    borderColor: theme.colors.border.subtle,
+    borderColor: theme.colors.border.default,
     overflow: 'hidden',
   } as ViewStyle,
 

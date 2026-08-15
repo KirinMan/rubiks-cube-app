@@ -12,14 +12,8 @@ interface Props {
   onFacePress?: (face: FaceId) => void;
 }
 
-const COLOR_MAP: Record<CubeColor, string> = {
-  white: '#FFFFFF',
-  yellow: '#FFD500',
-  red: '#C41E3A',
-  orange: '#FF5800',
-  blue: '#003680',
-  green: '#009B48',
-};
+// 3DキューブのSTICKER_COLOR_HEXと統一するため、theme.colors.cubeをそのまま使う
+const COLOR_MAP: Record<CubeColor, string> = theme.colors.cube;
 
 // 6面展開図のレイアウト
 //

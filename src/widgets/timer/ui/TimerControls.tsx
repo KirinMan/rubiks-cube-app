@@ -56,7 +56,7 @@ export function TimerControls({
           style={styles.button}
         />
         <Button
-          label="Undo"
+          label="元に戻す"
           onPress={onUndo}
           variant="ghost"
           size="sm"

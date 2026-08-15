@@ -9,6 +9,7 @@ import {
   ViewStyle,
   TextStyle,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../../shared/config/theme';
 import { CUBE_CONFIGS } from '../../../shared/config/constants';
 import { saveSettings, getSettings } from '../../../shared/lib/storage';
@@ -27,6 +28,7 @@ interface AppSettings {
 
 interface Props {
   onBack?: () => void;
+  onOpenHelp?: () => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -102,7 +104,7 @@ function OptionRow({ label, selected, onPress, isLast = false }: OptionRowProps)
       <Text style={rowStyles.rowLabel}>{label}</Text>
       {selected && (
         <View style={rowStyles.checkmark}>
-          <Text style={rowStyles.checkmarkText}>✓</Text>
+          <Ionicons name="checkmark" size={15} color={theme.colors.text.primary} />
         </View>
       )}
     </TouchableOpacity>
@@ -124,17 +126,26 @@ function InfoRow({ label, value, isLast = false }: InfoRowProps) {
   );
 }
 
-interface PlaceholderRowProps {
+interface NavRowProps {
   label: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  onPress: () => void;
   isLast?: boolean;
 }
 
-function PlaceholderRow({ label, isLast = false }: PlaceholderRowProps) {
+function NavRow({ label, icon, onPress, isLast = false }: NavRowProps) {
   return (
-    <View style={[rowStyles.row, !isLast && rowStyles.rowBorder]}>
-      <Text style={rowStyles.rowLabel}>{label}</Text>
-      <Text style={rowStyles.rowValue}>Coming soon</Text>
-    </View>
+    <TouchableOpacity
+      style={[rowStyles.row, !isLast && rowStyles.rowBorder]}
+      onPress={onPress}
+      activeOpacity={0.7}
+    >
+      <View style={rowStyles.navRowLabelArea}>
+        <Ionicons name={icon} size={18} color={theme.colors.accent.primary} />
+        <Text style={rowStyles.rowLabel}>{label}</Text>
+      </View>
+      <Ionicons name="chevron-forward" size={16} color={theme.colors.text.tertiary} />
+    </TouchableOpacity>
   );
 }
 
@@ -151,6 +162,12 @@ const rowStyles = StyleSheet.create({
   rowBorder: {
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.border.subtle,
+  } as ViewStyle,
+
+  navRowLabelArea: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
   } as ViewStyle,
 
   rowLabel: {
@@ -173,14 +190,8 @@ const rowStyles = StyleSheet.create({
     backgroundColor: theme.colors.accent.primary,
     alignItems: 'center',
     justifyContent: 'center',
+    ...theme.glow.violet,
   } as ViewStyle,
-
-  checkmarkText: {
-    color: '#FFFFFF',
-    fontSize: theme.font.size.sm,
-    fontWeight: theme.font.weight.bold,
-    includeFontPadding: false,
-  } as TextStyle,
 });
 
 // ---------------------------------------------------------------------------
@@ -193,9 +204,9 @@ const CUBE_SIZE_OPTIONS = CUBE_CONFIGS.map((c) => ({
 }));
 
 const INSPECTION_OPTIONS: { label: string; value: InspectionTime }[] = [
-  { label: 'Off', value: 'off' },
-  { label: '8 seconds', value: '8' },
-  { label: '15 seconds (WCA)', value: '15' },
+  { label: 'オフ', value: 'off' },
+  { label: '8秒', value: '8' },
+  { label: '15秒(WCA公式)', value: '15' },
 ];
 
 // ---------------------------------------------------------------------------
@@ -208,7 +219,7 @@ const APP_VERSION = '1.0.0';
 // Main Component
 // ---------------------------------------------------------------------------
 
-export function SettingsPage({ onBack }: Props) {
+export function SettingsPage({ onBack, onOpenHelp }: Props) {
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
   const [isLoaded, setIsLoaded] = useState(false);
 
@@ -239,10 +250,11 @@ export function SettingsPage({ onBack }: Props) {
             onPress={onBack}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <Text style={styles.backButtonText}>{'< Back'}</Text>
+            <Ionicons name="chevron-back" size={18} color={theme.colors.accent.tertiary} />
+            <Text style={styles.backButtonText}>戻る</Text>
           </TouchableOpacity>
         )}
-        <Text style={styles.headerTitle}>Settings</Text>
+        <Text style={styles.headerTitle}>設定</Text>
         {onBack && <View style={styles.headerSpacer} />}
       </View>
 
@@ -258,7 +270,7 @@ export function SettingsPage({ onBack }: Props) {
         {isLoaded && (
           <>
             {/* Default puzzle size */}
-            <Section title="Default Puzzle">
+            <Section title="デフォルトのパズル">
               {CUBE_SIZE_OPTIONS.map((opt, i) => (
                 <OptionRow
                   key={opt.value}
@@ -271,7 +283,7 @@ export function SettingsPage({ onBack }: Props) {
             </Section>
 
             {/* Inspection time */}
-            <Section title="Inspection Time">
+            <Section title="インスペクション時間">
               {INSPECTION_OPTIONS.map((opt, i) => (
                 <OptionRow
                   key={opt.value}
@@ -283,15 +295,17 @@ export function SettingsPage({ onBack }: Props) {
               ))}
             </Section>
 
-            {/* Theme (placeholder) */}
-            <Section title="Appearance">
-              <PlaceholderRow label="Theme" isLast />
-            </Section>
+            {/* Help */}
+            {onOpenHelp && (
+              <Section title="ヘルプ">
+                <NavRow label="使い方・用語集" icon="help-circle-outline" onPress={onOpenHelp} isLast />
+              </Section>
+            )}
 
             {/* About */}
-            <Section title="About">
-              <InfoRow label="Version" value={APP_VERSION} />
-              <InfoRow label="Platform" value="React Native / Expo" isLast />
+            <Section title="このアプリについて">
+              <InfoRow label="バージョン" value={APP_VERSION} />
+              <InfoRow label="プラットフォーム" value="React Native / Expo" isLast />
             </Section>
           </>
         )}
@@ -319,12 +333,14 @@ const styles = StyleSheet.create({
   } as ViewStyle,
 
   backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
     minWidth: 64,
   } as ViewStyle,
 
   backButtonText: {
     fontSize: theme.font.size.md,
-    color: theme.colors.accent.primary,
+    color: theme.colors.accent.tertiary,
     fontWeight: theme.font.weight.medium,
     includeFontPadding: false,
   } as TextStyle,

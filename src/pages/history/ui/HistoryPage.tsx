@@ -13,6 +13,7 @@ import {
   TextStyle,
   ListRenderItem,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useSolveHistoryStore } from '../../../features/timer-control/model/solveHistoryStore';
 import { calculateStats } from '../../../entities/solve/model';
 import { getRank } from '../../../entities/rank/model';
@@ -101,6 +102,7 @@ const tabStyles = StyleSheet.create({
   tabActive: {
     backgroundColor: theme.colors.accent.primary,
     borderColor: theme.colors.accent.primary,
+    ...theme.glow.violet,
   } as ViewStyle,
 
   tabText: {
@@ -123,10 +125,12 @@ const tabStyles = StyleSheet.create({
 function EmptyState() {
   return (
     <View style={emptyStyles.container}>
-      <Text style={emptyStyles.emoji}>[ ]</Text>
-      <Text style={emptyStyles.title}>No solves yet</Text>
+      <View style={emptyStyles.iconBadge}>
+        <Ionicons name="stats-chart-outline" size={30} color={theme.colors.accent.tertiary} />
+      </View>
+      <Text style={emptyStyles.title}>まだ記録がありません</Text>
       <Text style={emptyStyles.subtitle}>
-        Complete a solve to see your history here.
+        ソルブを完了すると、ここに履歴が表示されます
       </Text>
     </View>
   );
@@ -142,12 +146,18 @@ const emptyStyles = StyleSheet.create({
     gap: theme.spacing.sm,
   } as ViewStyle,
 
-  emoji: {
-    fontSize: theme.font.size['3xl'],
-    color: theme.colors.text.tertiary,
+  iconBadge: {
+    width: 64,
+    height: 64,
+    borderRadius: theme.radius.full,
+    backgroundColor: theme.colors.bg.elevated,
+    borderWidth: 1,
+    borderColor: theme.colors.border.default,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: theme.spacing.sm,
-    includeFontPadding: false,
-  } as TextStyle,
+    ...theme.glow.cyan,
+  } as ViewStyle,
 
   title: {
     fontSize: theme.font.size.lg,
@@ -198,12 +208,12 @@ export function HistoryPage({ onBack }: Props) {
 
   const handleClearHistory = useCallback(() => {
     Alert.alert(
-      'Clear History',
-      `Delete all ${solves.length} solve${solves.length !== 1 ? 's' : ''} for ${selectedPuzzleKey}? This cannot be undone.`,
+      '履歴を削除',
+      `${selectedPuzzleKey}の記録${solves.length}件をすべて削除します。この操作は取り消せません。`,
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: 'キャンセル', style: 'cancel' },
         {
-          text: 'Clear All',
+          text: 'すべて削除',
           style: 'destructive',
           onPress: () => store.clearHistory(selectedPuzzleKey),
         },
@@ -250,7 +260,7 @@ export function HistoryPage({ onBack }: Props) {
             onPress={handleClearHistory}
             activeOpacity={0.8}
           >
-            <Text style={styles.clearButtonText}>Clear History</Text>
+            <Text style={styles.clearButtonText}>履歴をすべて削除</Text>
           </TouchableOpacity>
         </View>
       ) : null,
@@ -267,10 +277,11 @@ export function HistoryPage({ onBack }: Props) {
             onPress={onBack}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <Text style={styles.backButtonText}>{'< Back'}</Text>
+            <Ionicons name="chevron-back" size={18} color={theme.colors.accent.tertiary} />
+            <Text style={styles.backButtonText}>戻る</Text>
           </TouchableOpacity>
         )}
-        <Text style={styles.headerTitle}>History</Text>
+        <Text style={styles.headerTitle}>履歴</Text>
         {onBack && <View style={styles.headerSpacer} />}
       </View>
 
@@ -323,12 +334,14 @@ const styles = StyleSheet.create({
   } as ViewStyle,
 
   backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
     minWidth: 64,
   } as ViewStyle,
 
   backButtonText: {
     fontSize: theme.font.size.md,
-    color: theme.colors.accent.primary,
+    color: theme.colors.accent.tertiary,
     fontWeight: theme.font.weight.medium,
     includeFontPadding: false,
   } as TextStyle,
@@ -379,7 +392,7 @@ const styles = StyleSheet.create({
   } as ViewStyle,
 
   clearButton: {
-    backgroundColor: 'rgba(239, 68, 68, 0.12)',
+    backgroundColor: 'rgba(255, 59, 92, 0.12)',
     borderWidth: 1,
     borderColor: theme.colors.error,
     borderRadius: theme.radius.md,

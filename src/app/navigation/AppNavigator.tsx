@@ -1,11 +1,12 @@
 import React from 'react';
-import { Text } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { NavigationContainer, useNavigation } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator, NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { theme } from '../../shared/config/theme';
 import { HistoryPage } from '../../pages/history/ui/HistoryPage';
 import { SettingsPage } from '../../pages/settings/ui/SettingsPage';
+import { HelpPage } from '../../pages/help/ui/HelpPage';
 import { GamePage } from '../../pages/game/ui/GamePage';
 import { HomePage } from '../../pages/home/ui/HomePage';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -15,6 +16,7 @@ export type RootStackParamList = {
   Tabs: undefined;
   Game: undefined;
   Free: undefined;
+  Help: undefined;
 };
 
 export type TabParamList = {
@@ -38,6 +40,12 @@ function HomeScreen() {
   );
 }
 
+// SettingsPageのラッパー：useNavigationでHelp画面へ遷移
+function SettingsScreen() {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  return <SettingsPage onOpenHelp={() => navigation.navigate('Help')} />;
+}
+
 function HomeTabs() {
   return (
     <Tab.Navigator
@@ -58,7 +66,9 @@ function HomeTabs() {
         name="Home"
         component={HomeScreen}
         options={{
-          tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>🏠</Text>,
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? 'home' : 'home-outline'} size={22} color={color} />
+          ),
           tabBarLabel: 'ホーム',
         }}
       />
@@ -66,15 +76,19 @@ function HomeTabs() {
         name="History"
         component={HistoryPage}
         options={{
-          tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>📊</Text>,
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? 'stats-chart' : 'stats-chart-outline'} size={22} color={color} />
+          ),
           tabBarLabel: '履歴',
         }}
       />
       <Tab.Screen
         name="Settings"
-        component={SettingsPage}
+        component={SettingsScreen}
         options={{
-          tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>⚙️</Text>,
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? 'settings' : 'settings-outline'} size={22} color={color} />
+          ),
           tabBarLabel: '設定',
         }}
       />
@@ -89,7 +103,7 @@ export function AppNavigator() {
         <Stack.Screen name="Tabs" component={HomeTabs} />
         <Stack.Screen
           name="Game"
-          options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
+          options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom', gestureEnabled: false }}
         >
           {(props: NativeStackScreenProps<RootStackParamList, 'Game'>) => (
             <GamePage onBack={() => props.navigation.goBack()} />
@@ -97,10 +111,15 @@ export function AppNavigator() {
         </Stack.Screen>
         <Stack.Screen
           name="Free"
-          options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
+          options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom', gestureEnabled: false }}
         >
           {(props: NativeStackScreenProps<RootStackParamList, 'Free'>) => (
             <GamePage mode="free" onBack={() => props.navigation.goBack()} />
+          )}
+        </Stack.Screen>
+        <Stack.Screen name="Help">
+          {(props: NativeStackScreenProps<RootStackParamList, 'Help'>) => (
+            <HelpPage onBack={() => props.navigation.goBack()} />
           )}
         </Stack.Screen>
       </Stack.Navigator>
