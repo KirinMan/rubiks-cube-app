@@ -30,18 +30,14 @@ export interface CardProps {
  */
 export function Card({ children, style, padding = theme.spacing.md, borderless = false }: CardProps) {
   return (
-    <View
-      style={[
-        styles.card,
-        theme.shadow.md,
-        !borderless && styles.border,
-        { padding },
-        style,
-      ]}
-    >
-      {/* Frosted-glass tint overlay */}
-      <View style={styles.tintOverlay} pointerEvents="none" />
-      {children}
+    // シャドウ/グローはoverflow:'hidden'と同じViewに乗せると切り取られてしまうため、
+    // グロー用の外側Viewと、角丸+tintOverlayをクリップする内側Viewを分けている。
+    <View style={[theme.shadow.md, theme.glow.soft, styles.glowWrapper]}>
+      <View style={[styles.card, !borderless && styles.border, { padding }, style]}>
+        {/* Frosted-glass tint overlay */}
+        <View style={styles.tintOverlay} pointerEvents="none" />
+        {children}
+      </View>
     </View>
   );
 }
@@ -51,6 +47,10 @@ export function Card({ children, style, padding = theme.spacing.md, borderless =
 // ---------------------------------------------------------------------------
 
 const styles = StyleSheet.create({
+  glowWrapper: {
+    borderRadius: theme.radius.lg,
+  } as ViewStyle,
+
   card: {
     backgroundColor: theme.colors.bg.elevated,
     borderRadius: theme.radius.lg,

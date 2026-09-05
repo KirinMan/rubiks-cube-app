@@ -11,14 +11,8 @@ interface Props {
   onFacePress?: (face: 'U' | 'F' | 'R') => void;
 }
 
-const COLOR_MAP: Record<CubeColor, string> = {
-  white: '#FFFFFF',
-  yellow: '#FFD500',
-  red: '#C41E3A',
-  orange: '#FF5800',
-  blue: '#003680',
-  green: '#009B48',
-};
+// 3DキューブのSTICKER_COLOR_HEXと統一するため、theme.colors.cubeをそのまま使う
+const COLOR_MAP: Record<CubeColor, string> = theme.colors.cube;
 
 // 等角投影の基底ベクトル（単位セルあたり）
 // 右方向: (cos30°, sin30°) = (√3/2, 0.5)

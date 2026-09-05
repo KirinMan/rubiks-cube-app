@@ -99,7 +99,7 @@ export function StatsPanel({ stats, currentRank, puzzleKey }: Props) {
 
       {/* Best time — prominently displayed */}
       <View style={styles.bestSection}>
-        <Text style={styles.bestLabel}>BEST</Text>
+        <Text style={styles.bestLabel}>ベスト</Text>
         <Text style={styles.bestTime}>{bestDisplay}</Text>
       </View>
 
@@ -128,7 +128,7 @@ export function StatsPanel({ stats, currentRank, puzzleKey }: Props) {
                 {currentRank.description}
               </Text>
               <Text style={styles.sessionCount}>
-                {stats.count} {stats.count === 1 ? 'solve' : 'solves'}
+                {stats.count}回のソルブ
               </Text>
             </View>
           </View>
@@ -146,9 +146,9 @@ export function StatsPanel({ stats, currentRank, puzzleKey }: Props) {
       ) : (
         /* No rank yet — show session count only */
         <View style={styles.noRankSection}>
-          <Text style={styles.noRankText}>Keep solving to earn your first rank!</Text>
+          <Text style={styles.noRankText}>ソルブを記録するとランクが表示されます</Text>
           <Text style={styles.sessionCount}>
-            {stats.count} {stats.count === 1 ? 'solve' : 'solves'}
+            {stats.count}回のソルブ
           </Text>
         </View>
       )}

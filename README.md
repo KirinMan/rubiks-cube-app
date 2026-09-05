@@ -1,98 +1,115 @@
 # RubiksMaster
 
-ルービックキューブのタイムアタックアプリ。2×2〜7×7に対応し、世界記録ベースのランク付けと詳細な統計を提供します。
+A speedcubing timer and practice app for React Native. Solve a fully interactive 3D Rubik's Cube right on your phone — orbit the camera and turn layers with your finger, just like a real cube — with WCA-style scrambles, inspection timing, and a world-record-based ranking system.
 
-## スクリーンショット
+## What is this app?
 
-| ホーム | ゲーム | 結果 | 履歴 |
-|--------|--------|------|------|
-| 3Dキューブプレビュー、ランク表示 | タイマー・スクランブル・キューブ操作 | ランクバッジ・ao5/ao12表示 | パズル別ソルブ履歴 |
+RubiksMaster turns your phone into a cubing training tool. Pick a puzzle size (2×2 through 7×7), get a fresh WCA-notation scramble, and either race the clock in **Start Solve** mode or practice freely with no timer in **Free Mode**. Every solve is tracked per puzzle size, ranked against world-record pace, and saved to your history.
 
-## 機能
+The cube itself is rendered in real 3D (not a flat illustration) and responds to direct touch: drag the background to orbit the camera around the cube, or drag a sticker to twist that layer — the same intuition as handling a physical cube.
 
-### コア機能
-- **タイムアタック**: WCA準拠のインスペクション（8秒/15秒）付きタイマー
-- **スクランブル**: WCA公式記法に準拠した自動生成（2×2: 11手〜7×7: 100手）
-- **ランク付け**: 世界記録ベースの8段階評価（SSS / SS / S / A / B / C / D / E）
-- **統計**: ao5 / ao12 / ao50 / ao100 のリアルタイム計算
+## How to play
 
-### キューブ操作
-- **スワイプ操作**: 1本指スワイプでキューブ面を回転
-- **カメラ回転**: 2本指ドラッグで3Dビューを任意の角度に回転（全6面表示）
-- **判定補助**: DNF / +2 ペナルティの手動付与、Undo
+1. **Pick a puzzle size** on the Home screen (2×2–7×7).
+2. Tap **Start Solve** to get a scramble and enter Start Solve mode, or **Free Mode** to practice without a timer.
+3. **Orbit the camera** — drag anywhere on the empty background of the cube view to rotate your viewpoint and see every face.
+4. **Turn a layer** — drag directly on a sticker; the layer under your finger twists in the direction you drag.
+5. In Start Solve mode: tap the timer to start inspection, tap again to start the clock, and tap once more (or finish the cube) to stop. Mark **DNF** or **+2** penalties after stopping if needed.
+6. Check **History** for past solves per puzzle size (swipe a row left to delete it), or open **Help** from Settings for a full walkthrough of controls and cubing terminology (scramble notation, DNF, +2, inspection, ranks, etc.).
 
-### その他
-- **ソルブ履歴**: パズル別に記録を管理、左スワイプで個別削除
-- **設定**: デフォルトキューブサイズ・インスペクション時間の変更
-- **ハプティクス**: タイマー状態変化時の触覚フィードバック
+## Features
 
-## 対応パズル
+### Core
+- **Start Solve mode**: WCA-style timer with inspection (off / 8s / 15s, configurable)
+- **Free Mode**: untimed practice with a move counter, no history recorded
+- **Scrambles**: auto-generated in official WCA notation (11 moves for 2×2 up to 100 for 7×7)
+- **Ranking**: 8-tier evaluation benchmarked against world-record pace (SSS / SS / S / A / B / C / D / E)
+- **Stats**: live ao5 / ao12 / ao100 averages, best time, and rank progress
 
-| サイズ | スクランブル手数 |
-|--------|----------------|
-| 2×2    | 11手 |
-| 3×3    | 20手 |
-| 4×4    | 40手 |
-| 5×5    | 60手 |
-| 6×6    | 80手 |
-| 7×7    | 100手 |
+### 3D cube interaction
+- **Drag-to-orbit camera** — free rotation around the whole cube, all 6 faces reachable
+- **Drag-to-turn layers** — grab any sticker and twist that layer directly, with a snapping 90°/180° animation
+- Cube geometry and turn direction are exhaustively verified by an automated script covering every face/axis/layer combination
 
-## ランク基準（3×3）
+### History & help
+- Per-puzzle solve history with swipe-to-delete and a detail view (time, date, scramble)
+- In-app Help screen: app overview, control walkthrough, and a glossary of cubing terms
+- Haptic feedback on timer state changes
 
-| ランク | 目安タイム | レベル |
-|--------|-----------|--------|
-| SSS    | ≤ 3.13秒  | 世界記録クラス |
-| SS     | ≤ 6秒     | 競技エリート |
-| S      | ≤ 10秒    | 上級スピードキューバー |
-| A      | ≤ 20秒    | スピードキューバー |
-| B      | ≤ 45秒    | 中級者 |
-| C      | ≤ 1分30秒 | カジュアル |
-| D      | ≤ 5分     | 初心者 |
-| E      | 5分超     | 入門者 |
+## Supported puzzles
 
-## 技術スタック
+| Size | Scramble length |
+|------|-----------------|
+| 2×2  | 11 moves |
+| 3×3  | 20 moves |
+| 4×4  | 40 moves |
+| 5×5  | 60 moves |
+| 6×6  | 80 moves |
+| 7×7  | 100 moves |
 
-- **フレームワーク**: React Native + Expo SDK 57
-- **言語**: TypeScript
-- **アーキテクチャ**: FSD (Feature-Sliced Design)
-- **状態管理**: Zustand
-- **ジェスチャー**: react-native-gesture-handler
-- **アニメーション**: react-native-reanimated v4
-- **3Dレンダリング**: react-native-svg（SVGベース等角投影）
-- **永続化**: AsyncStorage
-- **コードスタイル**: ESLint + Prettier
+## Rank tiers (3×3 reference)
 
-## ディレクトリ構成（FSD）
+| Rank | Time      | Level |
+|------|-----------|-------|
+| SSS  | ≤ 3.13s   | World-record class |
+| SS   | ≤ 6s      | Competitive elite |
+| S    | ≤ 10s     | Advanced speedcuber |
+| A    | ≤ 20s     | Speedcuber |
+| B    | ≤ 45s     | Intermediate |
+| C    | ≤ 1m30s   | Casual |
+| D    | ≤ 5m      | Beginner |
+| E    | > 5m      | Just starting out |
+
+## Tech stack
+
+- **Framework**: React Native + Expo SDK 57 (custom Dev Client, not Expo Go)
+- **Language**: TypeScript
+- **Architecture**: Feature-Sliced Design (FSD)
+- **State management**: Zustand
+- **3D rendering**: `react-native-webgpu` + `three/webgpu` + `@react-three/fiber` — a declarative WebGPU pipeline (replaces the legacy OpenGL ES/`expo-gl` path, which Apple has deprecated and which could not reliably render multi-object scenes on this stack)
+- **Gestures**: React Native's GestureResponder system, composited with a custom raycasting hit-test for camera-orbit vs. layer-turn disambiguation
+- **Animation**: react-native-reanimated v4
+- **2D cube preview**: react-native-svg (isometric projection, used for the Home screen preview)
+- **Persistence**: AsyncStorage
+- **Icons**: @expo/vector-icons
+- **Code style**: ESLint + Prettier
+
+## Directory structure (FSD)
 
 ```
 src/
-├── app/            # アプリエントリ・ナビゲーション・プロバイダー
-├── pages/          # 画面コンポーネント (Home / Game / History / Settings)
-├── widgets/        # 複合UIブロック (IsoCubeView / Timer / ScrambleDisplay 等)
-├── features/       # ユースケース (timer-control / scramble / rank)
-├── entities/       # ドメインモデル (cube / solve / rank)
-└── shared/         # 共通資源 (ui / lib / config / types)
+├── app/            # App entry, navigation, providers
+├── pages/          # Screens (Home / Game / History / Settings / Help)
+├── widgets/        # Composite UI blocks (3D cube viewer, timer, scramble display, stats panel...)
+├── features/       # Use cases (timer-control / scramble / rank)
+├── entities/       # Domain models (cube / solve / rank)
+└── shared/         # Shared resources (ui / lib / config / types)
 ```
 
-## セットアップ
+## Getting started
+
+`react-native-webgpu` requires native modules that aren't available in Expo Go, so this project needs a custom Dev Client build rather than `expo start`.
 
 ```bash
-# 依存関係インストール
+# Install dependencies
 npm install
 
-# iOS シミュレーターで起動
-npx expo start --ios
+# Build and run on iOS Simulator (first run — builds the native Dev Client)
+npx expo run:ios
 
-# Android エミュレーターで起動
-npx expo start --android
+# Build and run on an Android emulator
+npx expo run:android
+
+# Subsequent runs: start Metro only, then relaunch the already-installed Dev Client app
+npx expo start --dev-client
 ```
 
-### 必要な環境
+### Requirements
 
 - Node.js 20+
-- Expo CLI
-- Xcode 15+（iOS）/ Android Studio（Android）
+- Xcode 15+ (iOS) / Android Studio (Android)
+- CocoaPods (iOS)
 
-## ライセンス
+## License
 
 MIT

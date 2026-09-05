@@ -11,11 +11,15 @@ import {
   ViewStyle,
   TextStyle,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useCubeStore } from '../../../entities/cube/model';
 import { useRank } from '../../../features/rank/model';
+import { useSolveHistory } from '../../../features/timer-control/model';
+import { formatTime } from '../../../entities/rank/model';
 import { IsoCubeView } from '../../../widgets/cube-viewer/ui';
 import { RankBadge } from '../../../widgets/stats-panel/ui/RankBadge';
 import { theme } from '../../../shared/config/theme';
+import { GradientText } from '../../../shared/ui/GradientText';
 import { CUBE_CONFIGS } from '../../../shared/config/constants';
 import type { CubeSize } from '../../../shared/types';
 
@@ -69,6 +73,8 @@ export function HomePage({ onStartSolve, onHistory, onFreeMode }: HomePageProps)
 
   const puzzleKey = puzzleKeyFromSize(selectedSize);
   const { currentRank, bestFormatted } = useRank(puzzleKey);
+  const { solves } = useSolveHistory(puzzleKey);
+  const lastSolve = solves[0] ?? null;
 
   // ---- Auto-rotation animation ----
   // We cycle a value 0->1 continuously and derive a viewSize offset that
@@ -108,13 +114,15 @@ export function HomePage({ onStartSolve, onHistory, onFreeMode }: HomePageProps)
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="light-content" backgroundColor={theme.colors.bg.primary} />
+      <StatusBar barStyle="dark-content" backgroundColor={theme.colors.bg.primary} />
 
       <View style={styles.root}>
         {/* ── Header ── */}
         <View style={styles.header}>
-          <Text style={styles.headerLogo}>🎲</Text>
-          <Text style={styles.headerTitle}>RubiksMaster</Text>
+          <View style={styles.headerLogoBadge}>
+            <Ionicons name="cube" size={20} color={theme.colors.text.primary} />
+          </View>
+          <GradientText style={styles.headerTitle}>RubiksMaster</GradientText>
         </View>
 
         {/* ── Puzzle selection tabs ── */}
@@ -134,64 +142,94 @@ export function HomePage({ onStartSolve, onHistory, onFreeMode }: HomePageProps)
           ))}
         </ScrollView>
 
-        <View style={styles.divider} />
+        {/* ── ヒーローカード: 小さめのキューブプレビュー(タップでStart Solve) +
+               ベスト/ランク + 前回のソルブ。旧デザインは巨大な装飾キューブが
+               画面の大半を占めるだけで何もしてくれなかったため、実用的な
+               情報と1タップアクションを兼ねるカードにまとめた。 ── */}
+        <ScrollView
+          style={styles.scrollBody}
+          contentContainerStyle={styles.scrollBodyContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <TouchableOpacity
+            style={styles.heroCard}
+            onPress={onStartSolve}
+            activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel="タップしてソルブを開始"
+          >
+            <View style={styles.heroCubeArea}>
+              <View style={styles.cubeGlowRing} pointerEvents="none" />
+              <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+                <IsoCubeView state={cubeState} size={selectedSize} viewSize={108} />
+              </Animated.View>
+            </View>
 
-        {/* ── IsoCubeView with rotation animation ── */}
-        <View style={styles.cubeSection}>
-          <Animated.View style={[styles.cubeWrapper, { transform: [{ scale: scaleAnim }] }]}>
-            <IsoCubeView state={cubeState} size={selectedSize} viewSize={240} />
-          </Animated.View>
-        </View>
+            <View style={styles.heroStatsArea}>
+              <View style={styles.heroStatRow}>
+                <View style={styles.statItem}>
+                  <Text style={styles.statLabel}>ベスト</Text>
+                  <Text style={styles.statValue}>{bestFormatted ?? '--:--'}</Text>
+                </View>
+                <View style={styles.statDivider} />
+                <View style={styles.statItem}>
+                  <Text style={styles.statLabel}>ランク</Text>
+                  {currentRank ? (
+                    <RankBadge tier={currentRank} size="sm" showLabel={false} />
+                  ) : (
+                    <Text style={styles.statValue}>--</Text>
+                  )}
+                </View>
+              </View>
 
-        <View style={styles.divider} />
+              <View style={styles.lastSolveRow}>
+                <Ionicons name="time-outline" size={14} color={theme.colors.text.tertiary} />
+                <Text style={styles.lastSolveText}>
+                  {lastSolve
+                    ? `前回 ${formatTime(lastSolve.time)}${lastSolve.dnf ? ' (DNF)' : ''}`
+                    : 'まだ記録がありません'}
+                </Text>
+              </View>
+            </View>
 
-        {/* ── Stats summary ── */}
-        <View style={styles.statsRow}>
-          <View style={styles.statItem}>
-            <Text style={styles.statLabel}>ベスト</Text>
-            <Text style={styles.statValue}>{bestFormatted ?? '--:--'}</Text>
-          </View>
+            <View style={styles.heroTapHint}>
+              <Ionicons name="play-circle" size={30} color={theme.colors.accent.primary} />
+            </View>
+          </TouchableOpacity>
 
-          <View style={styles.statDivider} />
-
-          <View style={styles.statItem}>
-            <Text style={styles.statLabel}>ランク</Text>
-            {currentRank ? (
-              <RankBadge tier={currentRank} size="sm" showLabel={false} />
-            ) : (
-              <Text style={styles.statValue}>--</Text>
-            )}
-          </View>
-        </View>
-
-        <View style={styles.divider} />
-
-        {/* ── CTA buttons ── */}
-        <View style={styles.ctaSection}>
+          {/* ── Primary CTA ── */}
           <TouchableOpacity
             style={styles.primaryButton}
             onPress={onStartSolve}
             activeOpacity={0.85}
           >
-            <Text style={styles.primaryButtonText}>🎲  Start Solve</Text>
+            <Ionicons name="play" size={18} color={theme.colors.text.inverse} style={styles.buttonIcon} />
+            <Text style={styles.primaryButtonText}>ソルブ開始</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.secondaryButton}
-            onPress={onHistory}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.secondaryButtonText}>📊  History</Text>
-          </TouchableOpacity>
+          {/* ── Secondary actions: 横並びタイルにして、Start Solveが主役だと
+                 分かりやすくする(旧デザインは3つの全幅ボタンが縦に並び、
+                 重要度の差が視覚的に伝わらなかった) ── */}
+          <View style={styles.secondaryRow}>
+            <TouchableOpacity
+              style={styles.secondaryTile}
+              onPress={onHistory}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="stats-chart" size={20} color={theme.colors.accent.secondary} />
+              <Text style={styles.secondaryTileText}>履歴</Text>
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.secondaryButton}
-            onPress={onFreeMode}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.secondaryButtonText}>🧩  フリーモード</Text>
-          </TouchableOpacity>
-        </View>
+            <TouchableOpacity
+              style={styles.secondaryTile}
+              onPress={onFreeMode}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="extension-puzzle" size={20} color={theme.colors.accent.tertiary} />
+              <Text style={styles.secondaryTileText}>フリーモード</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
       </View>
     </SafeAreaView>
   );
@@ -223,15 +261,20 @@ const styles = StyleSheet.create({
     borderBottomColor: theme.colors.border.subtle,
   } as ViewStyle,
 
-  headerLogo: {
-    fontSize: theme.font.size['2xl'],
+  headerLogoBadge: {
+    width: 34,
+    height: 34,
+    borderRadius: theme.radius.md,
+    backgroundColor: theme.colors.accent.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginRight: theme.spacing.sm,
-  } as TextStyle,
+    ...theme.glow.violet,
+  } as ViewStyle,
 
   headerTitle: {
-    fontSize: theme.font.size.xl,
-    fontWeight: theme.font.weight.bold,
-    color: theme.colors.text.primary,
+    fontSize: theme.font.size['2xl'],
+    fontWeight: theme.font.weight.extrabold,
     letterSpacing: 0.4,
   } as TextStyle,
 
@@ -259,6 +302,7 @@ const styles = StyleSheet.create({
   puzzleTabSelected: {
     backgroundColor: theme.colors.accent.primary,
     borderColor: theme.colors.accent.primary,
+    ...theme.glow.violet,
   } as ViewStyle,
 
   puzzleTabText: {
@@ -278,33 +322,77 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.border.subtle,
   } as ViewStyle,
 
-  // Cube section
-  cubeSection: {
+  // Scroll body
+  scrollBody: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: theme.spacing.lg,
     backgroundColor: theme.colors.bg.primary,
   } as ViewStyle,
 
-  cubeWrapper: {
+  scrollBodyContent: {
+    padding: theme.spacing.lg,
+    gap: theme.spacing.md,
+  } as ViewStyle,
+
+  // ── ヒーローカード ──
+  heroCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.bg.elevated,
+    borderRadius: theme.radius.xl,
+    borderWidth: 1,
+    borderColor: theme.colors.border.default,
+    padding: theme.spacing.md,
+    gap: theme.spacing.sm,
+    ...theme.shadow.md,
+  } as ViewStyle,
+
+  heroCubeArea: {
+    width: 108,
+    height: 108,
+    alignItems: 'center',
+    justifyContent: 'center',
+  } as ViewStyle,
+
+  // キューブの背後に漂わせる、柔らかいキャンディカラーの光の輪
+  cubeGlowRing: {
+    position: 'absolute',
+    width: 108,
+    height: 108,
+    borderRadius: 54,
+    backgroundColor: theme.colors.accent.secondary,
+    opacity: 0.22,
+  } as ViewStyle,
+
+  heroStatsArea: {
+    flex: 1,
+    gap: theme.spacing.sm,
+  } as ViewStyle,
+
+  heroStatRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  } as ViewStyle,
+
+  lastSolveRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  } as ViewStyle,
+
+  lastSolveText: {
+    fontSize: theme.font.size.xs,
+    color: theme.colors.text.tertiary,
+    includeFontPadding: false,
+  } as TextStyle,
+
+  heroTapHint: {
     alignItems: 'center',
     justifyContent: 'center',
   } as ViewStyle,
 
   // Stats
-  statsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-around',
-    paddingVertical: theme.spacing.md,
-    paddingHorizontal: theme.spacing.lg,
-    backgroundColor: theme.colors.bg.elevated,
-  } as ViewStyle,
-
   statItem: {
-    flex: 1,
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: theme.spacing.xs,
   } as ViewStyle,
 
@@ -319,55 +407,62 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: theme.font.size.lg,
     fontWeight: theme.font.weight.bold,
-    color: theme.colors.text.primary,
+    color: theme.colors.neon.cyan,
     letterSpacing: 0.2,
   } as TextStyle,
 
   statDivider: {
     width: 1,
-    height: 36,
+    height: 32,
     backgroundColor: theme.colors.border.subtle,
     marginHorizontal: theme.spacing.md,
   } as ViewStyle,
 
-  // CTA
-  ctaSection: {
-    paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.lg,
-    gap: theme.spacing.sm,
-    backgroundColor: theme.colors.bg.secondary,
-  } as ViewStyle,
+  // ── CTA ──
+  buttonIcon: {
+    marginRight: theme.spacing.xs,
+  } as TextStyle,
 
   primaryButton: {
+    flexDirection: 'row',
     backgroundColor: theme.colors.accent.primary,
     borderRadius: theme.radius.lg,
     paddingVertical: theme.spacing.md,
     alignItems: 'center',
     justifyContent: 'center',
-    ...theme.shadow.md,
+    ...theme.glow.pink,
   } as ViewStyle,
 
   primaryButtonText: {
     fontSize: theme.font.size.lg,
     fontWeight: theme.font.weight.bold,
-    color: theme.colors.text.primary,
+    color: theme.colors.text.inverse,
     letterSpacing: 0.3,
   } as TextStyle,
 
-  secondaryButton: {
+  // ── Secondary actions(横並びタイル) ──
+  secondaryRow: {
+    flexDirection: 'row',
+    gap: theme.spacing.sm,
+  } as ViewStyle,
+
+  secondaryTile: {
+    flex: 1,
+    flexDirection: 'row',
     backgroundColor: theme.colors.bg.elevated,
     borderRadius: theme.radius.lg,
     paddingVertical: theme.spacing.md,
     alignItems: 'center',
     justifyContent: 'center',
+    gap: theme.spacing.xs,
     borderWidth: 1,
     borderColor: theme.colors.border.default,
   } as ViewStyle,
 
-  secondaryButtonText: {
-    fontSize: theme.font.size.lg,
+  secondaryTileText: {
+    fontSize: theme.font.size.sm,
     fontWeight: theme.font.weight.semibold,
     color: theme.colors.text.secondary,
-    letterSpacing: 0.3,
+    letterSpacing: 0.2,
   } as TextStyle,
 });

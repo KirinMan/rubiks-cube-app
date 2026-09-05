@@ -1,49 +1,59 @@
 export const theme = {
   colors: {
-    // Background layers
+    // Background layers — クリーム白ベース(パステル・ポップ方向)
     bg: {
-      primary: '#0D0D0F',
-      secondary: '#16161A',
-      elevated: '#1E1E24',
-      overlay: 'rgba(255,255,255,0.05)',
+      primary: '#FFF8F0',
+      secondary: '#FFFFFF',
+      elevated: '#FFFFFF',
+      overlay: 'rgba(58,46,77,0.03)',
     },
 
-    // Brand / accent
+    // Brand / accent — キャンディカラー(ピンク→ラベンダー→ミント)
     accent: {
-      primary: '#6C63FF',
-      secondary: '#A78BFA',
-      gradient: ['#6C63FF', '#A78BFA'] as const,
+      primary: '#FF5FA2',
+      secondary: '#9B7EF0',
+      tertiary: '#2FC9B7',
+      gradient: ['#FF5FA2', '#9B7EF0', '#2FC9B7'] as const,
+    },
+
+    // キャンディカラーの単色パレット(ボタン/カード/バッジの縁取り・影に個別指定する用)
+    neon: {
+      violet: '#9B7EF0',
+      pink: '#FF5FA2',
+      cyan: '#2FC9B7',
+      green: '#6BCB77',
+      yellow: '#FFC93D',
     },
 
     // Semantic colors
-    success: '#22C55E',
-    error: '#EF4444',
-    warning: '#F59E0B',
-    info: '#3B82F6',
+    success: '#4CAF7D',
+    error: '#FF6B6B',
+    warning: '#FFA940',
+    info: '#2FC9B7',
 
-    // Text
+    // Text — 純黒ではなく温かみのあるダークプラムで柔らかく
     text: {
-      primary: '#F1F1F3',
-      secondary: '#9CA3AF',
-      tertiary: '#6B7280',
-      inverse: '#0D0D0F',
+      primary: '#3A2E4D',
+      secondary: '#8A7A99',
+      tertiary: '#B8ACC4',
+      inverse: '#FFFFFF',
     },
 
-    // Border
+    // Border — ラベンダーを薄く乗せた優しい縁取り
     border: {
-      subtle: 'rgba(255,255,255,0.08)',
-      default: 'rgba(255,255,255,0.14)',
-      strong: 'rgba(255,255,255,0.24)',
+      subtle: 'rgba(155,126,240,0.14)',
+      default: 'rgba(155,126,240,0.28)',
+      strong: 'rgba(155,126,240,0.50)',
     },
 
-    // Rubik's cube face colors
+    // Rubik's cube face colors(3Dキューブ側のSTICKER_COLOR_HEXと統一)
     cube: {
-      white: '#FFFFFF',
-      yellow: '#FFD500',
-      red: '#C41E3A',
-      orange: '#FF5800',
-      blue: '#003DA5',
-      green: '#009B48',
+      white: '#F5F5F0',
+      yellow: '#FFD400',
+      red: '#FF2D3A',
+      orange: '#FF7A1A',
+      blue: '#1E6BFF',
+      green: '#17C964',
     },
   },
 
@@ -57,11 +67,12 @@ export const theme = {
     '3xl': 64,
   },
 
+  // パステル・ポップらしい、大きめの角丸
   radius: {
-    sm: 6,
-    md: 12,
-    lg: 18,
-    xl: 24,
+    sm: 8,
+    md: 14,
+    lg: 22,
+    xl: 30,
     full: 9999,
   },
 
@@ -90,27 +101,63 @@ export const theme = {
     },
   },
 
+  // 白背景の上でくっきり浮き上がる、柔らかいドロップシャドウ
+  // (shadowColorを純黒ではなく本文色に近いダークプラムにして、きつくなりすぎないようにする)
   shadow: {
     sm: {
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.3,
-      shadowRadius: 3,
+      shadowColor: '#3A2E4D',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
       elevation: 2,
     },
     md: {
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.4,
-      shadowRadius: 8,
+      shadowColor: '#3A2E4D',
+      shadowOffset: { width: 0, height: 6 },
+      shadowOpacity: 0.12,
+      shadowRadius: 10,
       elevation: 6,
     },
     lg: {
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 8 },
-      shadowOpacity: 0.5,
-      shadowRadius: 16,
+      shadowColor: '#3A2E4D',
+      shadowOffset: { width: 0, height: 10 },
+      shadowOpacity: 0.16,
+      shadowRadius: 20,
       elevation: 12,
+    },
+  },
+
+  // 「ぷっくり」としたポップな立体感を出すための、色付きドロップシャドウ。
+  // ネオン方向のような発光ではなく、はっきりオフセットの付いたキャンディ調の影にする。
+  glow: {
+    violet: {
+      shadowColor: '#9B7EF0',
+      shadowOffset: { width: 0, height: 6 },
+      shadowOpacity: 0.4,
+      shadowRadius: 10,
+      elevation: 8,
+    },
+    pink: {
+      shadowColor: '#FF5FA2',
+      shadowOffset: { width: 0, height: 6 },
+      shadowOpacity: 0.4,
+      shadowRadius: 10,
+      elevation: 8,
+    },
+    cyan: {
+      shadowColor: '#2FC9B7',
+      shadowOffset: { width: 0, height: 6 },
+      shadowOpacity: 0.4,
+      shadowRadius: 10,
+      elevation: 8,
+    },
+    // カード等の背後にうっすら漂わせる、控えめなアンビエントシャドウ
+    soft: {
+      shadowColor: '#9B7EF0',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.14,
+      shadowRadius: 14,
+      elevation: 5,
     },
   },
 } as const;

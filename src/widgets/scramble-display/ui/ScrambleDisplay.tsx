@@ -73,15 +73,15 @@ function MoveChip({ token }: { token: MoveToken }) {
   let textColor: string;
 
   if (token.isInverse) {
-    backgroundColor = 'rgba(239, 68, 68, 0.12)';
+    backgroundColor = 'rgba(255, 59, 92, 0.14)';
     borderColor = theme.colors.error;
-    textColor = '#FF8080';
+    textColor = theme.colors.error;
   } else if (token.isWide) {
-    backgroundColor = 'rgba(108, 99, 255, 0.15)';
+    backgroundColor = 'rgba(176, 38, 255, 0.16)';
     borderColor = theme.colors.accent.primary;
     textColor = theme.colors.accent.secondary;
   } else if (token.isDouble) {
-    backgroundColor = 'rgba(245, 158, 11, 0.12)';
+    backgroundColor = 'rgba(255, 184, 0, 0.14)';
     borderColor = theme.colors.warning;
     textColor = theme.colors.warning;
   } else {

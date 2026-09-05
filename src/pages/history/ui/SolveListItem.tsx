@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   StyleSheet,
   View,
@@ -9,6 +9,8 @@ import {
   ViewStyle,
   TextStyle,
 } from 'react-native';
+import { Swipeable } from 'react-native-gesture-handler';
+import { Ionicons } from '@expo/vector-icons';
 import type { SolveRecord, RankTier } from '../../../shared/types';
 import { theme } from '../../../shared/config/theme';
 import { RankBadge } from '../../../widgets/stats-panel/ui/RankBadge';
@@ -80,9 +82,9 @@ function DetailModal({ solve, rank, onClose }: DetailModalProps) {
         <TouchableOpacity activeOpacity={1} style={modalStyles.container}>
           {/* Header */}
           <View style={modalStyles.header}>
-            <Text style={modalStyles.title}>Solve Detail</Text>
+            <Text style={modalStyles.title}>ソルブの詳細</Text>
             <TouchableOpacity onPress={onClose} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-              <Text style={modalStyles.closeButton}>X</Text>
+              <Ionicons name="close" size={22} color={theme.colors.text.tertiary} />
             </TouchableOpacity>
           </View>
 
@@ -109,11 +111,11 @@ function DetailModal({ solve, rank, onClose }: DetailModalProps) {
           {/* Meta */}
           <View style={modalStyles.metaSection}>
             <View style={modalStyles.metaRow}>
-              <Text style={modalStyles.metaLabel}>Date</Text>
+              <Text style={modalStyles.metaLabel}>日付</Text>
               <Text style={modalStyles.metaValue}>{formatDateTime(solve.date)}</Text>
             </View>
             <View style={modalStyles.metaRow}>
-              <Text style={modalStyles.metaLabel}>Puzzle</Text>
+              <Text style={modalStyles.metaLabel}>パズル</Text>
               <Text style={modalStyles.metaValue}>
                 {solve.cubeSize}x{solve.cubeSize}
               </Text>
@@ -122,7 +124,7 @@ function DetailModal({ solve, rank, onClose }: DetailModalProps) {
 
           {/* Scramble */}
           <View style={modalStyles.scrambleSection}>
-            <Text style={modalStyles.scrambleLabel}>Scramble</Text>
+            <Text style={modalStyles.scrambleLabel}>スクランブル</Text>
             <ScrollView style={modalStyles.scrambleScroll} showsVerticalScrollIndicator={false}>
               <Text style={modalStyles.scrambleText} selectable>
                 {solve.scramble}
@@ -202,13 +204,13 @@ const modalStyles = StyleSheet.create({
   } as ViewStyle,
 
   dnfBadge: {
-    backgroundColor: 'rgba(239, 68, 68, 0.2)',
+    backgroundColor: 'rgba(255, 59, 92, 0.2)',
     borderWidth: 1,
     borderColor: theme.colors.error,
   } as ViewStyle,
 
   plusTwoBadge: {
-    backgroundColor: 'rgba(245, 158, 11, 0.2)',
+    backgroundColor: 'rgba(255, 184, 0, 0.2)',
     borderWidth: 1,
     borderColor: theme.colors.warning,
   } as ViewStyle,
@@ -280,70 +282,71 @@ const modalStyles = StyleSheet.create({
 
 export function SolveListItem({ solve, index, rank, onDelete }: Props) {
   const [showDetail, setShowDetail] = useState(false);
-  const [isSwipeOpen, setIsSwipeOpen] = useState(false);
+  const swipeableRef = useRef<Swipeable>(null);
 
   const timeDisplay = formatSolveTime(solve);
+
+  const renderRightActions = () => (
+    <TouchableOpacity
+      style={styles.deleteButton}
+      onPress={() => {
+        swipeableRef.current?.close();
+        onDelete(solve.id);
+      }}
+    >
+      <Ionicons name="trash-outline" size={18} color={theme.colors.text.inverse} />
+      <Text style={styles.deleteButtonText}>削除</Text>
+    </TouchableOpacity>
+  );
 
   return (
     <>
       <View style={styles.wrapper}>
-        {/* Delete button revealed on swipe */}
-        <TouchableOpacity
-          style={styles.deleteButton}
-          onPress={() => {
-            setIsSwipeOpen(false);
-            onDelete(solve.id);
-          }}
+        <Swipeable
+          ref={swipeableRef}
+          renderRightActions={renderRightActions}
+          overshootRight={false}
+          rightThreshold={40}
         >
-          <Text style={styles.deleteButtonText}>Delete</Text>
-        </TouchableOpacity>
+          {/* Main row */}
+          <TouchableOpacity
+            style={styles.row}
+            activeOpacity={0.7}
+            onPress={() => setShowDetail(true)}
+          >
+            {/* Index */}
+            <Text style={styles.indexText}>#{index + 1}</Text>
 
-        {/* Main row */}
-        <TouchableOpacity
-          style={[styles.row, isSwipeOpen && styles.rowSlid]}
-          activeOpacity={0.7}
-          onPress={() => {
-            if (isSwipeOpen) {
-              setIsSwipeOpen(false);
-            } else {
-              setShowDetail(true);
-            }
-          }}
-          onLongPress={() => setIsSwipeOpen((prev) => !prev)}
-          delayLongPress={300}
-        >
-          {/* Index */}
-          <Text style={styles.indexText}>#{index + 1}</Text>
-
-          {/* Time + badges */}
-          <View style={styles.timeSection}>
-            <Text style={[styles.timeText, solve.dnf && styles.dnfText]}>
-              {timeDisplay}
-            </Text>
-            <View style={styles.badgesRow}>
-              {solve.dnf && (
-                <View style={[styles.badge, styles.dnfBadge]}>
-                  <Text style={styles.badgeText}>DNF</Text>
-                </View>
-              )}
-              {solve.plusTwo && !solve.dnf && (
-                <View style={[styles.badge, styles.plusTwoBadge]}>
-                  <Text style={styles.badgeText}>+2</Text>
-                </View>
-              )}
+            {/* Time + badges */}
+            <View style={styles.timeSection}>
+              <Text style={[styles.timeText, solve.dnf && styles.dnfText]}>
+                {timeDisplay}
+              </Text>
+              <View style={styles.badgesRow}>
+                {solve.dnf && (
+                  <View style={[styles.badge, styles.dnfBadge]}>
+                    <Text style={styles.badgeText}>DNF</Text>
+                  </View>
+                )}
+                {solve.plusTwo && !solve.dnf && (
+                  <View style={[styles.badge, styles.plusTwoBadge]}>
+                    <Text style={styles.badgeText}>+2</Text>
+                  </View>
+                )}
+              </View>
             </View>
-          </View>
 
-          {/* Date */}
-          <Text style={styles.dateText}>{formatDate(solve.date)}</Text>
+            {/* Date */}
+            <Text style={styles.dateText}>{formatDate(solve.date)}</Text>
 
-          {/* Rank badge */}
-          {rank && (
-            <View style={styles.rankContainer}>
-              <RankBadge tier={rank} size="sm" showLabel={false} />
-            </View>
-          )}
-        </TouchableOpacity>
+            {/* Rank badge */}
+            {rank && (
+              <View style={styles.rankContainer}>
+                <RankBadge tier={rank} size="sm" showLabel={false} />
+              </View>
+            )}
+          </TouchableOpacity>
+        </Swipeable>
       </View>
 
       {showDetail && (
@@ -363,7 +366,6 @@ export function SolveListItem({ solve, index, rank, onDelete }: Props) {
 
 const styles = StyleSheet.create({
   wrapper: {
-    position: 'relative',
     marginHorizontal: theme.spacing.md,
     marginVertical: theme.spacing.xs / 2,
     borderRadius: theme.radius.md,
@@ -371,20 +373,17 @@ const styles = StyleSheet.create({
   } as ViewStyle,
 
   deleteButton: {
-    position: 'absolute',
-    right: 0,
-    top: 0,
-    bottom: 0,
     width: 80,
+    height: '100%',
     backgroundColor: theme.colors.error,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: theme.radius.md,
+    gap: 2,
   } as ViewStyle,
 
   deleteButtonText: {
-    color: '#FFFFFF',
-    fontSize: theme.font.size.sm,
+    color: theme.colors.text.inverse,
+    fontSize: theme.font.size.xs,
     fontWeight: theme.font.weight.bold,
     includeFontPadding: false,
   } as TextStyle,
@@ -395,14 +394,9 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.bg.elevated,
     borderWidth: 1,
     borderColor: theme.colors.border.subtle,
-    borderRadius: theme.radius.md,
     paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.sm + 2,
     gap: theme.spacing.sm,
-  } as ViewStyle,
-
-  rowSlid: {
-    transform: [{ translateX: -80 }],
   } as ViewStyle,
 
   indexText: {
@@ -444,13 +438,13 @@ const styles = StyleSheet.create({
   } as ViewStyle,
 
   dnfBadge: {
-    backgroundColor: 'rgba(239, 68, 68, 0.2)',
+    backgroundColor: 'rgba(255, 59, 92, 0.2)',
     borderWidth: 1,
     borderColor: theme.colors.error,
   } as ViewStyle,
 
   plusTwoBadge: {
-    backgroundColor: 'rgba(245, 158, 11, 0.2)',
+    backgroundColor: 'rgba(255, 184, 0, 0.2)',
     borderWidth: 1,
     borderColor: theme.colors.warning,
   } as ViewStyle,

@@ -119,7 +119,7 @@ export function Button({
         onPress={isDisabled ? undefined : onPress}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
-        style={[animatedStyle, fullWidth ? styles.fullWidth : {}]}
+        style={[animatedStyle, fullWidth ? styles.fullWidth : {}, theme.glow.violet]}
         accessibilityRole="button"
         accessibilityState={{ disabled: isDisabled, busy: loading }}
       >
@@ -151,6 +151,7 @@ export function Button({
         containerStyle,
         { backgroundColor: variantBg[variant] },
         variantBorder[variant] ? { borderWidth: 1, borderColor: variantBorder[variant] } : {},
+        variant === 'danger' ? theme.glow.pink : {},
       ]}
       accessibilityRole="button"
       accessibilityState={{ disabled: isDisabled, busy: loading }}

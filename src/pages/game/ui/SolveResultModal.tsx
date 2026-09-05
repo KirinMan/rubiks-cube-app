@@ -122,7 +122,7 @@ export function SolveResultModal({
             <Animated.View style={[styles.card, cardStyle]}>
               {/* Title */}
               <AppText variant="caption" style={styles.titleLabel}>
-                SOLVE COMPLETE
+                ソルブ完了
               </AppText>
 
               {/* Main time */}
@@ -149,7 +149,7 @@ export function SolveResultModal({
               <View style={styles.statsRow}>
                 <StatItem label="ao5" value={formatStatTime(stats.ao5)} />
                 <StatItem label="ao12" value={formatStatTime(stats.ao12)} />
-                <StatItem label="best" value={formatStatTime(stats.best)} />
+                <StatItem label="ベスト" value={formatStatTime(stats.best)} />
               </View>
 
               {/* Buttons */}
